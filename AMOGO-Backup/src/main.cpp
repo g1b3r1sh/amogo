@@ -34,7 +34,6 @@ competition Competition;
 // Hardware Constants
 const int JOYSTICK_MAX            = 127; // Maximum value of joystick axis (negative is minimum value)
 // Control Constants
-//const int JOY_THRES             = 5;  // Threshold joystick value (-127 to 127) needed to pass in order to affect the drivetrain
 const int DELAY_TIME              = 10; // Delay time for loops (ms)
 const int MV_PCT_SCALE            = 120; // Scale to convert mV to percent of max voltage of motors (12V)
 const int TILTER_SPEED            = 50; // % of max voltage
