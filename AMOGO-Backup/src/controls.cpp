@@ -1,34 +1,98 @@
 #include "controls.h"
-using namespace vex;
 
-controller::axis* FRONT_BACK_DRIVE_AXIS;
-controller::axis* LEFT_RIGHT_DRIVE_AXIS;
-controller::button* FRONT_DRIVE_BUTTON;
-controller::button* BACK_DRIVE_BUTTON;
-controller::button* LEFT_DRIVE_BUTTON;
-controller::button* RIGHT_DRIVE_BUTTON;
-controller::button* TILTER_IN_BUTTON;
-controller::button* TILTER_OUT_BUTTON;
-controller::button* MOGO_IN_BUTTON;
-controller::button* MOGO_OUT_BUTTON;
-controller::button* CONVEYOR_IN_BUTTON;
-controller::button* CONVEYOR_OUT_BUTTON;
-controller::button* INTAKE_IN_BUTTON;
-controller::button* INTAKE_OUT_BUTTON;
-controller::button* INVERSE_CONTROLS_BUTTON;
-controller::button* SWITCH_DRIVE_BUTTON;
-
-// Bind bindings to controller
-void initDriveControls()
+namespace controls
 {
-  FRONT_BACK_DRIVE_AXIS    = &Controller1.Axis3;
-  LEFT_RIGHT_DRIVE_AXIS    = &Controller1.Axis4;
-  FRONT_DRIVE_BUTTON       = &Controller1.ButtonUp; 
-  BACK_DRIVE_BUTTON        = &Controller1.ButtonDown;
-  LEFT_DRIVE_BUTTON        = &Controller1.ButtonLeft;
-  RIGHT_DRIVE_BUTTON       = &Controller1.ButtonRight;
-  TILTER_IN_BUTTON         = &Controller1.ButtonX;
-  TILTER_OUT_BUTTON        = &Controller1.ButtonA;
-  MOGO_IN_BUTTON           = &Controller1.ButtonR1;
-  MOGO_OUT_BUTTON          = &Controller1.ButtonR2;
+  void updateControls()
+  {
+    driveControls();
+    tilterControls();
+    mogoControls();
+  }
+  
+
+  /// Drive Controls
+  void driveControls()
+  {
+    // Joypad controls override arcade controls
+    arcadeControls();
+    joypadControls();
+  }
+  
+  // Arcade controls for drive (controlled by one joystick)
+  void arcadeControls()
+  {
+    robot::setTankRpm(
+      arcadeMapSpeed(bindings::FRONT_BACK_DRIVE_AXIS->value() + bindings::LEFT_RIGHT_DRIVE_AXIS->value() / 2),
+      arcadeMapSpeed(bindings::FRONT_BACK_DRIVE_AXIS->value() - bindings::LEFT_RIGHT_DRIVE_AXIS->value() / 2)
+    );
+  }
+  
+  // Maps joystick values to drive speed values
+  int arcadeMapSpeed(float value)
+  {
+    return (int) map(value, -JOYSTICK_MAX, JOYSTICK_MAX, -JOYSTICK_DRIVE_MAX_RPM, JOYSTICK_DRIVE_MAX_RPM);
+  }
+  
+  // Joypad controls for drive (controlled by four buttons)
+  void joypadControls()
+  {
+    if (bindings::FRONT_DRIVE_BUTTON->pressing())
+    {
+      robot::setTankRpm(JOYPAD_DRIVE_RPM, JOYPAD_DRIVE_RPM);
+    }
+    else if (bindings::BACK_DRIVE_BUTTON->pressing())
+    {
+      robot::setTankRpm(-JOYPAD_DRIVE_RPM, -JOYPAD_DRIVE_RPM);
+    }
+    else if (bindings::LEFT_DRIVE_BUTTON->pressing())
+    {
+      robot::setTankRpm(-JOYPAD_DRIVE_RPM, JOYPAD_DRIVE_RPM);
+    }
+    else if (bindings::RIGHT_DRIVE_BUTTON->pressing())
+    {
+      robot::setTankRpm(JOYPAD_DRIVE_RPM, -JOYPAD_DRIVE_RPM);
+    }
+  }
+
+  
+  /// Mogo and Tilter Control
+  // Returns number representing direction between two buttons
+  int directionButtons(controller::button* fwdButton, controller::button* bwdButton)
+  {
+    if (fwdButton->pressing())
+    {
+      return 1;
+    }
+    else if (bwdButton->pressing())
+    {
+      return -1;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+
+  // Controls for tilter
+  void tilterControls()
+  {
+    robot::setTilterForce(TILTER_VOLTAGE * directionButtons(bindings::TILTER_OUT_BUTTON, bindings::TILTER_IN_BUTTON));
+  }
+
+  // Controls for mogo
+  void mogoControls()
+  {
+    // Mogo with threshold
+    /*int vel = MOGO_SPEED * directionButtons(MOGO_OUT_BUTTON, MOGO_IN_BUTTON);
+    if (vel >= 0 || getMotorPos(mogo) > 0)
+    {
+      setMogoVel(vel);
+    }
+    else
+    {
+      setMogoVel(0);
+    }*/
+    // Mogo without threshold
+    robot::setMogoForce(MOGO_VOLTAGE * directionButtons(bindings::MOGO_OUT_BUTTON, bindings::MOGO_IN_BUTTON));
+  }
 }
